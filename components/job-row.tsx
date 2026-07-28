@@ -3,15 +3,27 @@
 import { ChevronRight } from 'lucide-react'
 import type { Job } from '@/lib/types'
 import { useStore } from '@/lib/store'
+import { cn } from '@/lib/utils'
 import { StatusChip } from './status-chip'
 
-export function JobRow({ job }: { job: Job }) {
+export function JobRow({
+  job,
+  divider = false,
+}: {
+  job: Job
+  /** Dibuja una línea separadora arriba. Opcional: en listas de tarjetas
+   *  independientes (pantalla Trabajos) se deja en false. */
+  divider?: boolean
+}) {
   const { go } = useStore()
   return (
     <button
       type="button"
       onClick={() => go({ name: 'trabajo', jobId: job.id })}
-      className="flex w-full items-center gap-3 rounded-2xl bg-card px-4 py-3.5 text-left transition active:bg-muted"
+      className={cn(
+        'flex w-full items-center gap-3 rounded-2xl bg-card px-4 py-3.5 text-left transition active:bg-muted',
+        divider && 'rounded-t-none border-t border-border',
+      )}
     >
       <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary text-base font-bold text-secondary-foreground">
         {job.cliente.slice(0, 1).toUpperCase()}
