@@ -80,6 +80,7 @@ function matchesQuery(job: Job, q: string): boolean {
   if (!t) return true
   const haystack = [
     job.cliente,
+    job.titulo,
     job.direccion,
     job.telefono,
     ...job.notas.map((n) => n.text),
@@ -268,13 +269,13 @@ function HistoryRow({ job, divider }: { job: Job; divider: boolean }) {
             cobrado ? 'text-foreground/80' : 'text-foreground',
           )}
         >
-          {job.cliente}
+          {job.titulo || job.cliente}
         </p>
-        {job.direccion ? (
-          <p className="truncate text-sm text-muted-foreground">{job.direccion}</p>
-        ) : (
-          <p className="truncate text-sm text-muted-foreground">Sin dirección</p>
-        )}
+        <p className="truncate text-sm text-muted-foreground">
+          {job.titulo && job.titulo !== job.cliente
+            ? job.cliente
+            : (job.direccion ?? 'Sin dirección')}
+        </p>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Phone } from 'lucide-react'
+import { Phone, ClipboardList } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { ScreenHeader } from '../screen-header'
@@ -10,27 +10,29 @@ type Cuando = 'Hoy' | 'Mañana' | 'Fecha'
 
 export function CrearTrabajoScreen() {
   const { createJob, go, back } = useStore()
+  const [tarea, setTarea] = useState('')
   const [cliente, setCliente] = useState('')
   const [telefono, setTelefono] = useState('')
   const [direccion, setDireccion] = useState('')
-  const [nota, setNota] = useState('')
   const [cuando, setCuando] = useState<Cuando>('Hoy')
   const [fecha, setFecha] = useState('')
 
-  const puedeGuardar = cliente.trim().length > 0
+  // Alcanza con la tarea O el cliente: uno anota "cambiar bisagra" antes de
+  // saber el nombre. Si no hay cliente, la tarea oficia de referencia.
+  const puedeGuardar = tarea.trim().length > 0 || cliente.trim().length > 0
 
   function guardar() {
     if (!puedeGuardar) return
-    const label = cuando === 'Fecha' ? (fecha || 'Fecha a definir') : cuando
+    const label = cuando === 'Fecha' ? fecha || 'Fecha a definir' : cuando
+    const clienteFinal = cliente.trim() || tarea.trim()
     const id = createJob({
-      cliente: cliente.trim(),
+      cliente: clienteFinal,
+      titulo: tarea.trim() || undefined,
       telefono: telefono.trim(),
       direccion: direccion.trim(),
       cuando: label,
       esHoy: cuando === 'Hoy',
-      nota: nota.trim(),
     })
-    // reemplazar la pantalla de creación por el detalle
     back()
     go({ name: 'trabajo', jobId: id })
   }
@@ -40,35 +42,49 @@ export function CrearTrabajoScreen() {
       <ScreenHeader title="Nuevo trabajo" />
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
-        <Field label="Cliente" hint="Lo único obligatorio">
+        {/* La tarea primero: es lo que uno recuerda del trabajo */}
+        <Field label="¿Qué hay que hacer?">
+          <div className="flex items-start gap-2 rounded-xl border border-input bg-card px-4 transition-colors focus-within:border-primary">
+            <ClipboardList className="mt-3.5 size-5 shrink-0 text-muted-foreground" />
+            <textarea
+              value={tarea}
+              onChange={(e) => setTarea(e.target.value)}
+              placeholder="Ej. Cambiar bisagra de cocina"
+              rows={2}
+              autoFocus
+              className="w-full resize-none bg-transparent py-3.5 text-[17px] outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+        </Field>
+
+        <Field label="Cliente" hint="Opcional">
           <input
             value={cliente}
             onChange={(e) => setCliente(e.target.value)}
-            placeholder="Nombre o referencia (ej. Pérdida Belgrano)"
-            autoFocus
-            className="w-full rounded-xl border border-input bg-card px-4 py-3.5 text-[17px] outline-none focus:border-primary"
+            placeholder="Nombre del cliente"
+            className="w-full rounded-xl border border-input bg-card px-4 py-3.5 text-[17px] outline-none transition-colors focus:border-primary"
           />
         </Field>
 
-        <Field label="Teléfono" hint="Sin esto no podés mandar WhatsApp después">
-          <div className="flex items-center gap-2 rounded-xl border border-input bg-card px-4 focus-within:border-primary">
+        <Field label="Teléfono" hint="Para mandarle WhatsApp">
+          <div className="flex items-center gap-2 rounded-xl border border-input bg-card px-4 transition-colors focus-within:border-primary">
             <Phone className="size-5 text-muted-foreground" />
             <input
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
               inputMode="tel"
               placeholder="Agregar teléfono"
-              className="w-full bg-transparent py-3.5 text-[17px] outline-none"
+              className="w-full bg-transparent py-3.5 text-[17px] outline-none placeholder:text-muted-foreground"
             />
           </div>
         </Field>
 
-        <Field label="Dirección">
+        <Field label="Dirección" hint="Opcional">
           <input
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
             placeholder="Agregar dirección"
-            className="w-full rounded-xl border border-input bg-card px-4 py-3.5 text-[17px] outline-none focus:border-primary"
+            className="w-full rounded-xl border border-input bg-card px-4 py-3.5 text-[17px] outline-none transition-colors focus:border-primary"
           />
         </Field>
 
@@ -80,7 +96,7 @@ export function CrearTrabajoScreen() {
                 type="button"
                 onClick={() => setCuando(c)}
                 className={cn(
-                  'flex-1 rounded-xl border py-3.5 text-base font-semibold transition',
+                  'flex-1 rounded-xl border py-3.5 text-base font-semibold transition active:scale-[0.98]',
                   cuando === c
                     ? 'border-primary bg-primary text-primary-foreground'
                     : 'border-input bg-card text-foreground',
@@ -95,19 +111,9 @@ export function CrearTrabajoScreen() {
               type="date"
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-input bg-card px-4 py-3.5 text-[17px] outline-none focus:border-primary"
+              className="mt-2 w-full rounded-xl border border-input bg-card px-4 py-3.5 text-[17px] outline-none transition-colors focus:border-primary"
             />
           )}
-        </Field>
-
-        <Field label="Nota">
-          <textarea
-            value={nota}
-            onChange={(e) => setNota(e.target.value)}
-            placeholder="¿Qué hay que hacer?"
-            rows={3}
-            className="w-full resize-none rounded-xl border border-input bg-card px-4 py-3.5 text-[17px] outline-none focus:border-primary"
-          />
         </Field>
       </div>
 
@@ -118,7 +124,7 @@ export function CrearTrabajoScreen() {
           onClick={guardar}
           className="h-14 w-full rounded-2xl bg-primary text-lg font-bold text-primary-foreground transition active:scale-[0.99] disabled:opacity-40"
         >
-          Guardar
+          Guardar trabajo
         </button>
       </div>
     </div>

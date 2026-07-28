@@ -42,6 +42,7 @@ interface Store {
   getJob: (id: string) => Job | undefined
   createJob: (data: {
     cliente: string
+    titulo?: string
     telefono?: string
     direccion?: string
     cuando: string
@@ -78,6 +79,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j1',
       cliente: 'González',
+      titulo: 'Cambiar bisagra del placard',
       telefono: '1156781234',
       direccion: 'Av. Rivadavia 4820, CABA',
       cuando: 'Hoy',
@@ -100,6 +102,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j2',
       cliente: 'Pérez',
+      titulo: 'Cambio de termotanque 80L',
       telefono: '1145559876',
       direccion: 'Bulnes 1123, CABA',
       cuando: 'Hace 5 días',
@@ -116,6 +119,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j3',
       cliente: 'López',
+      titulo: 'Reforma de baño',
       telefono: '1133224455',
       direccion: 'Thames 2200, CABA',
       cuando: 'Hace 4 días',
@@ -139,6 +143,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j4',
       cliente: 'Martínez',
+      titulo: 'Revisar pérdida en la cocina',
       telefono: '1166778899',
       direccion: 'Av. Cabildo 1750, CABA',
       cuando: 'Hoy',
@@ -155,6 +160,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j5',
       cliente: 'Fernández',
+      titulo: 'Destape de cañería',
       telefono: '1155667788',
       direccion: 'Av. Corrientes 3200, CABA',
       cuando: 'Ayer',
@@ -169,6 +175,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j6',
       cliente: 'Suárez',
+      titulo: 'Cambio de flexibles y canilla',
       telefono: '1144556677',
       direccion: 'Gurruchaga 850, CABA',
       cuando: 'Hace 2 días',
@@ -183,6 +190,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j7',
       cliente: 'Ramírez',
+      titulo: 'Reparación de pérdida en baño',
       telefono: '1177889900',
       direccion: 'Directorio 1500, CABA',
       cuando: 'Hace 6 días',
@@ -197,6 +205,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j8',
       cliente: 'Gómez',
+      titulo: 'Instalación de termotanque',
       telefono: '1122334455',
       direccion: 'Av. Santa Fe 4100, CABA',
       cuando: 'Hace 9 días',
@@ -211,6 +220,7 @@ function makeSeedJobs(): Job[] {
     {
       id: 'j9',
       cliente: 'Díaz',
+      titulo: 'Cambio de rejilla y sifón',
       telefono: '1199887766',
       direccion: 'Malabia 2300, CABA',
       cuando: 'Hace 11 días',
@@ -326,6 +336,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const job: Job = {
       id,
       cliente: data.cliente,
+      titulo: data.titulo?.trim() || undefined,
       telefono: data.telefono || undefined,
       direccion: data.direccion || undefined,
       cuando: data.cuando,

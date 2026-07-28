@@ -20,9 +20,9 @@ export function BottomSheet({
         type="button"
         aria-label="Cerrar"
         onClick={onClose}
-        className="absolute inset-0 bg-foreground/40"
+        className="absolute inset-0 bg-foreground/40 animate-in fade-in duration-200"
       />
-      <div className="relative z-10 rounded-t-3xl bg-card px-5 pb-8 pt-3 shadow-2xl">
+      <div className="relative z-10 rounded-t-3xl bg-card px-5 pb-8 pt-3 shadow-2xl animate-in slide-in-from-bottom duration-300 ease-out">
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
         {title && (
           <h3 className="mb-3 px-1 text-lg font-bold text-foreground">{title}</h3>

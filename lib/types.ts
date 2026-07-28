@@ -41,6 +41,7 @@ export interface JobNote {
 export interface Job {
   id: string
   cliente: string
+  titulo?: string // la tarea, ej. "Cambiar bisagra del placard" — es lo que uno recuerda
   telefono?: string
   direccion?: string
   cuando: string // "Hoy" | "Mañana" | fecha

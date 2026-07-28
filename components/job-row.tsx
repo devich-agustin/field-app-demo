@@ -31,14 +31,16 @@ export function JobRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-[17px] font-bold text-foreground">
-            {job.cliente}
+            {job.titulo || job.cliente}
           </p>
         </div>
-        {job.direccion ? (
-          <p className="truncate text-sm text-muted-foreground">{job.direccion}</p>
-        ) : (
-          <p className="truncate text-sm text-muted-foreground">Sin dirección</p>
-        )}
+        <p className="truncate text-sm text-muted-foreground">
+          {job.titulo
+            ? job.titulo === job.cliente
+              ? (job.direccion ?? 'Sin dirección')
+              : job.cliente
+            : (job.direccion ?? 'Sin dirección')}
+        </p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1.5">
         <StatusChip status={job.status} />
