@@ -1,24 +1,151 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
-import { useStore } from '@/lib/store'
-import { JobRow } from '../job-row'
+import { Search, ChevronRight } from 'lucide-react'
+import { useStore, formatMoney } from '@/lib/store'
+import type { Job, JobStatus } from '@/lib/types'
+import { cn } from '@/lib/utils'
+
+/* ────────────────────────────────────────────────────────────────────────
+   Trabajos = historial cronológico (no un CRM / no una lista de clientes).
+   El usuario piensa "¿qué hice ayer? ¿esta semana? ¿cuánto cobré este mes?".
+   Por eso: agrupado por fecha, con selector de período y un resumen mensual.
+   ──────────────────────────────────────────────────────────────────────── */
+
+type Period = 'hoy' | 'semana' | 'mes' | 'todo'
+
+const PERIODS: { key: Period; label: string }[] = [
+  { key: 'hoy', label: 'Hoy' },
+  { key: 'semana', label: 'Esta semana' },
+  { key: 'mes', label: 'Este mes' },
+  { key: 'todo', label: 'Todo' },
+]
+
+const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
+const MESES_ABBR = [
+  'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+  'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+]
+
+function parseISO(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+function midnight(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+function diffInDays(iso: string): number {
+  const today = midnight(new Date()).getTime()
+  const that = midnight(parseISO(iso)).getTime()
+  return Math.round((today - that) / 86_400_000)
+}
+
+/** Encabezado de grupo: HOY / AYER / MAÑANA / "VIERNES 25 JUL". */
+function headerLabel(iso: string): string {
+  const diff = diffInDays(iso)
+  if (diff === 0) return 'HOY'
+  if (diff === 1) return 'AYER'
+  if (diff === -1) return 'MAÑANA'
+  const d = parseISO(iso)
+  return `${DIAS[d.getDay()]} ${d.getDate()} ${MESES_ABBR[d.getMonth()]}`.toUpperCase()
+}
+
+function inPeriod(iso: string, period: Period): boolean {
+  if (period === 'todo') return true
+  const date = midnight(parseISO(iso))
+  const today = midnight(new Date())
+  if (period === 'hoy') return date.getTime() === today.getTime()
+  if (period === 'mes') {
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth()
+    )
+  }
+  // semana: lunes a domingo de la semana actual
+  const dow = (today.getDay() + 6) % 7 // 0 = lunes
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - dow)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  return date >= monday && date <= sunday
+}
+
+/** Búsqueda ampliada: cliente, dirección, teléfono, notas, presupuesto. */
+function matchesQuery(job: Job, q: string): boolean {
+  const t = q.trim().toLowerCase()
+  if (!t) return true
+  const haystack = [
+    job.cliente,
+    job.direccion,
+    job.telefono,
+    ...job.notas.map((n) => n.text),
+    job.quote?.descripcion,
+    ...(job.quote?.items?.map((i) => i.descripcion) ?? []),
+    job.quote ? formatMoney(job.quote.total) : '',
+    typeof job.montoCobrado === 'number' ? formatMoney(job.montoCobrado) : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(t)
+}
+
+const plural = (n: number, sing: string, plur: string) =>
+  `${n} ${n === 1 ? sing : plur}`
 
 export function TrabajosScreen() {
   const { jobs, profile } = useStore()
   const [q, setQ] = useState('')
+  const [period, setPeriod] = useState<Period>('todo')
 
+  const searching = q.trim().length > 0
+
+  // Buscar recorre TODO el historial; sin búsqueda, se aplica el período.
   const filtered = useMemo(() => {
-    const t = q.trim().toLowerCase()
-    if (!t) return jobs
-    return jobs.filter(
-      (j) =>
-        j.cliente.toLowerCase().includes(t) ||
-        (j.direccion ?? '').toLowerCase().includes(t) ||
-        j.notas.some((n) => n.text.toLowerCase().includes(t)),
-    )
-  }, [jobs, q])
+    return jobs
+      .filter((j) => (searching ? matchesQuery(j, q) : inPeriod(j.fecha, period)))
+      .slice()
+      .sort((a, b) => b.fecha.localeCompare(a.fecha)) // más nuevo primero
+  }, [jobs, q, period, searching])
+
+  // Agrupar por fecha, preservando el orden ya ordenado.
+  const groups = useMemo(() => {
+    const out: { iso: string; label: string; jobs: Job[] }[] = []
+    for (const j of filtered) {
+      const last = out[out.length - 1]
+      if (last && last.iso === j.fecha) last.jobs.push(j)
+      else out.push({ iso: j.fecha, label: headerLabel(j.fecha), jobs: [j] })
+    }
+    return out
+  }, [filtered])
+
+  // Resumen del mes (solo cuando el período es "Este mes" y no se está buscando).
+  const monthSummary = useMemo(() => {
+    if (period !== 'mes' || searching) return null
+    const inMonth = jobs.filter((j) => inPeriod(j.fecha, 'mes'))
+    const cobrado = inMonth
+      .filter((j) => j.cobrado)
+      .reduce((s, j) => s + (j.montoCobrado ?? j.quote?.total ?? 0), 0)
+    return {
+      mes: MESES[new Date().getMonth()],
+      trabajos: inMonth.length,
+      cobrado,
+      presupuestos: inMonth.filter((j) => j.quote?.status === 'enviado').length,
+      pendientesCobro: inMonth.filter(
+        (j) => j.status === 'terminado' && !j.cobrado,
+      ).length,
+      seguimientos: inMonth.filter(
+        (j) =>
+          j.quote?.status === 'enviado' &&
+          (j.quote.enviadoHace ?? 0) >= 3 &&
+          j.status !== 'cobrado',
+      ).length,
+    }
+  }, [jobs, period, searching])
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -31,27 +158,223 @@ export function TrabajosScreen() {
         </div>
       </header>
 
+      {/* Buscador (sticky) */}
       <div className="sticky top-0 z-10 bg-background/95 px-5 py-3 backdrop-blur">
         <div className="flex items-center gap-2 rounded-2xl border border-input bg-card px-4">
-          <Search className="size-5 text-muted-foreground" />
+          <Search className="size-5 shrink-0 text-muted-foreground" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar cliente, dirección o nota"
-            className="w-full bg-transparent py-3 text-[15px] outline-none"
+            placeholder="Buscar cliente, dirección, nota o monto"
+            className="w-full bg-transparent py-3 text-[15px] outline-none placeholder:text-muted-foreground"
           />
         </div>
-      </div>
 
-      <div className="flex flex-col gap-2 px-5 pb-8">
-        {filtered.length > 0 ? (
-          filtered.map((j) => <JobRow key={j.id} job={j} />)
-        ) : (
-          <p className="mt-10 text-center text-sm text-muted-foreground">
-            No encontramos trabajos con “{q}”.
-          </p>
+        {/* Selector de período (se oculta al buscar: la búsqueda ve todo) */}
+        {!searching && (
+          <div className="mt-3 flex gap-1 rounded-full bg-secondary p-1">
+            {PERIODS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => setPeriod(p.key)}
+                className={cn(
+                  'flex-1 rounded-full px-2 py-2 text-[13px] font-semibold transition-colors',
+                  period === p.key
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground',
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
+
+      <div className="px-5 pb-10">
+        {/* Resumen mensual */}
+        {monthSummary && <MonthSummary s={monthSummary} />}
+
+        {/* Nota al buscar */}
+        {searching && (
+          <p className="mb-3 mt-1 px-1 text-[13px] font-medium text-muted-foreground">
+            {filtered.length === 0
+              ? `Sin resultados para “${q.trim()}”`
+              : `${plural(filtered.length, 'resultado', 'resultados')} en todo el historial`}
+          </p>
+        )}
+
+        {/* Lista agrupada por fecha */}
+        {groups.length > 0 ? (
+          <div className="flex flex-col gap-6">
+            {groups.map((g) => (
+              <section key={g.iso}>
+                <h2 className="mb-2 px-1 text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {g.label}
+                </h2>
+                <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                  {g.jobs.map((j, i) => (
+                    <HistoryRow key={j.id} job={j} divider={i > 0} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          !searching && (
+            <p className="mt-12 text-center text-[15px] text-muted-foreground">
+              No hay trabajos en este período.
+            </p>
+          )
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ── Fila de historial ──────────────────────────────────────────────────
+   Jerarquía de lectura: los trabajos abiertos (esperando / pendiente de cobro)
+   pesan más; los cobrados se muestran apagados y con el monto facturado.     */
+
+function HistoryRow({ job, divider }: { job: Job; divider: boolean }) {
+  const { go } = useStore()
+  const cobrado = job.status === 'cobrado'
+
+  return (
+    <button
+      type="button"
+      onClick={() => go({ name: 'trabajo', jobId: job.id })}
+      className={cn(
+        'flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-muted',
+        divider && 'border-t border-border',
+      )}
+    >
+      <div
+        className={cn(
+          'flex size-11 shrink-0 items-center justify-center rounded-full text-base font-bold',
+          cobrado
+            ? 'bg-secondary/70 text-muted-foreground'
+            : 'bg-secondary text-secondary-foreground',
+        )}
+      >
+        {job.cliente.slice(0, 1).toUpperCase()}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p
+          className={cn(
+            'truncate text-[17px] font-bold',
+            cobrado ? 'text-foreground/80' : 'text-foreground',
+          )}
+        >
+          {job.cliente}
+        </p>
+        {job.direccion ? (
+          <p className="truncate text-sm text-muted-foreground">{job.direccion}</p>
+        ) : (
+          <p className="truncate text-sm text-muted-foreground">Sin dirección</p>
+        )}
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <StatusTag status={job.status} />
+        {cobrado ? (
+          typeof job.montoCobrado === 'number' && (
+            <span className="text-[13px] font-semibold text-status-cobrado">
+              {formatMoney(job.montoCobrado)}
+            </span>
+          )
+        ) : (
+          <ChevronRight className="size-4 text-muted-foreground" />
+        )}
+      </div>
+    </button>
+  )
+}
+
+/* Etiqueta de estado con jerarquía. No usa el StatusChip global para no
+   alterar la pantalla Hoy: "cobrado" acá va apagado (menos protagonismo). */
+function StatusTag({ status }: { status: JobStatus }) {
+  const styles: Record<JobStatus, string> = {
+    agendado: 'bg-status-agendado text-status-agendado-foreground',
+    proceso: 'bg-status-proceso text-status-proceso-foreground',
+    esperando: 'bg-status-esperando text-status-esperando-foreground',
+    terminado: 'bg-status-terminado text-status-terminado-foreground',
+    // apagado: gris sutil en vez del verde sólido, para bajar su peso visual
+    cobrado: 'bg-transparent text-muted-foreground',
+  }
+  const labels: Record<JobStatus, string> = {
+    agendado: 'Agendado',
+    proceso: 'En proceso',
+    esperando: 'Esperando',
+    terminado: 'Pendiente de cobro',
+    cobrado: 'Cobrado',
+  }
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold leading-none',
+        styles[status],
+      )}
+    >
+      {labels[status]}
+    </span>
+  )
+}
+
+/* ── Resumen mensual (solo texto, sin gráficos) ── */
+function MonthSummary({
+  s,
+}: {
+  s: {
+    mes: string
+    trabajos: number
+    cobrado: number
+    presupuestos: number
+    pendientesCobro: number
+    seguimientos: number
+  }
+}) {
+  return (
+    <div className="mb-5 rounded-2xl border border-border bg-card p-5">
+      <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+        {s.mes}
+      </p>
+      <p className="mt-1 text-[28px] font-bold leading-none tracking-tight text-status-cobrado">
+        {formatMoney(s.cobrado)}
+        <span className="ml-1.5 text-[14px] font-medium text-muted-foreground">
+          cobrados
+        </span>
+      </p>
+      <p className="mt-1.5 text-[14px] text-muted-foreground">
+        {plural(s.trabajos, 'trabajo', 'trabajos')} este mes
+      </p>
+
+      <div className="mt-4 flex flex-col gap-1.5 border-t border-border pt-3.5 text-[14px] text-foreground/90">
+        <SummaryLine value={s.presupuestos} sing="presupuesto enviado" plur="presupuestos enviados" />
+        <SummaryLine value={s.pendientesCobro} sing="pendiente de cobro" plur="pendientes de cobro" />
+        <SummaryLine value={s.seguimientos} sing="seguimiento pendiente" plur="seguimientos pendientes" />
+      </div>
+    </div>
+  )
+}
+
+function SummaryLine({
+  value,
+  sing,
+  plur,
+}: {
+  value: number
+  sing: string
+  plur: string
+}) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="min-w-[1.5rem] text-[15px] font-bold tabular-nums text-foreground">
+        {value}
+      </span>
+      <span className="text-muted-foreground">{value === 1 ? sing : plur}</span>
     </div>
   )
 }

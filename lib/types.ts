@@ -44,6 +44,7 @@ export interface Job {
   telefono?: string
   direccion?: string
   cuando: string // "Hoy" | "Mañana" | fecha
+  fecha: string // ISO YYYY-MM-DD, para agrupar y ordenar cronológicamente
   esHoy: boolean
   status: JobStatus
   notas: JobNote[]

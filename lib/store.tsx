@@ -63,78 +63,167 @@ const StoreContext = createContext<Store | null>(null)
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 
-const seedJobs: Job[] = [
-  {
-    id: 'j1',
-    cliente: 'González',
-    telefono: '1156781234',
-    direccion: 'Av. Rivadavia 4820, CABA',
-    cuando: 'Hoy',
-    esHoy: true,
-    status: 'esperando',
-    notas: [
-      {
-        id: uid(),
-        text: 'Bisagra de la puerta del placard rota. Falta el repuesto, lo traigo mañana.',
-        at: 'Ayer 15:40',
-      },
-    ],
-    fotos: [],
-    cobrado: false,
-    reminderText: 'Acordate de volver a lo de González con el repuesto de la bisagra.',
-    reminderWhen: 'Mañana',
-    historial: 'Ya lo atendiste 2 veces. Última: cambio de flexible, marzo.',
-  },
-  {
-    id: 'j2',
-    cliente: 'Pérez',
-    telefono: '1145559876',
-    direccion: 'Bulnes 1123, CABA',
-    cuando: 'Hace 5 días',
-    esHoy: false,
-    status: 'terminado',
-    notas: [
-      { id: uid(), text: 'Cambio de termotanque 80L. Listo.', at: 'Hace 5 días' },
-    ],
-    fotos: [],
-    cobrado: false,
-    terminadoHaceDias: 5,
-  },
-  {
-    id: 'j3',
-    cliente: 'López',
-    telefono: '1133224455',
-    direccion: 'Thames 2200, CABA',
-    cuando: 'Hace 4 días',
-    esHoy: false,
-    status: 'agendado',
-    notas: [{ id: uid(), text: 'Presupuesto por reforma de baño.', at: 'Hace 4 días' }],
-    fotos: [],
-    cobrado: false,
-    quote: {
-      total: 185000,
-      descripcion: 'Reforma de baño: mano de obra + materiales',
-      items: [
-        { id: uid(), descripcion: 'Mano de obra instalación', precio: 120000 },
-        { id: uid(), descripcion: 'Materiales y sellados', precio: 65000 },
+/** Fecha ISO (YYYY-MM-DD) de hace n días, calculada al cargar la sesión. */
+function daysAgoISO(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function makeSeedJobs(): Job[] {
+  return [
+    {
+      id: 'j1',
+      cliente: 'González',
+      telefono: '1156781234',
+      direccion: 'Av. Rivadavia 4820, CABA',
+      cuando: 'Hoy',
+      fecha: daysAgoISO(0),
+      esHoy: true,
+      status: 'esperando',
+      notas: [
+        {
+          id: uid(),
+          text: 'Bisagra de la puerta del placard rota. Falta el repuesto, lo traigo mañana.',
+          at: 'Ayer 15:40',
+        },
       ],
-      status: 'enviado',
-      enviadoHace: 4,
+      fotos: [],
+      cobrado: false,
+      reminderText: 'Acordate de volver a lo de González con el repuesto de la bisagra.',
+      reminderWhen: 'Mañana',
+      historial: 'Ya lo atendiste 2 veces. Última: cambio de flexible, marzo.',
     },
-  },
-  {
-    id: 'j4',
-    cliente: 'Martínez',
-    telefono: '1166778899',
-    direccion: 'Av. Cabildo 1750, CABA',
-    cuando: 'Hoy',
-    esHoy: true,
-    status: 'agendado',
-    notas: [{ id: uid(), text: 'Pérdida en la cocina, revisar canilla.', at: 'Hoy 08:10' }],
-    fotos: [],
-    cobrado: false,
-  },
-]
+    {
+      id: 'j2',
+      cliente: 'Pérez',
+      telefono: '1145559876',
+      direccion: 'Bulnes 1123, CABA',
+      cuando: 'Hace 5 días',
+      fecha: daysAgoISO(5),
+      esHoy: false,
+      status: 'terminado',
+      notas: [
+        { id: uid(), text: 'Cambio de termotanque 80L. Listo.', at: 'Hace 5 días' },
+      ],
+      fotos: [],
+      cobrado: false,
+      terminadoHaceDias: 5,
+    },
+    {
+      id: 'j3',
+      cliente: 'López',
+      telefono: '1133224455',
+      direccion: 'Thames 2200, CABA',
+      cuando: 'Hace 4 días',
+      fecha: daysAgoISO(4),
+      esHoy: false,
+      status: 'agendado',
+      notas: [{ id: uid(), text: 'Presupuesto por reforma de baño.', at: 'Hace 4 días' }],
+      fotos: [],
+      cobrado: false,
+      quote: {
+        total: 185000,
+        descripcion: 'Reforma de baño: mano de obra + materiales',
+        items: [
+          { id: uid(), descripcion: 'Mano de obra instalación', precio: 120000 },
+          { id: uid(), descripcion: 'Materiales y sellados', precio: 65000 },
+        ],
+        status: 'enviado',
+        enviadoHace: 4,
+      },
+    },
+    {
+      id: 'j4',
+      cliente: 'Martínez',
+      telefono: '1166778899',
+      direccion: 'Av. Cabildo 1750, CABA',
+      cuando: 'Hoy',
+      fecha: daysAgoISO(0),
+      esHoy: true,
+      status: 'agendado',
+      notas: [{ id: uid(), text: 'Pérdida en la cocina, revisar canilla.', at: 'Hoy 08:10' }],
+      fotos: [],
+      cobrado: false,
+    },
+    // --- Historial (trabajos ya cobrados): dan cuerpo al historial y al
+    //     resumen mensual. Son 'cobrado', así que no generan recordatorios
+    //     ni aparecen en Hoy: la pantalla Hoy queda intacta.
+    {
+      id: 'j5',
+      cliente: 'Fernández',
+      telefono: '1155667788',
+      direccion: 'Av. Corrientes 3200, CABA',
+      cuando: 'Ayer',
+      fecha: daysAgoISO(1),
+      esHoy: false,
+      status: 'cobrado',
+      notas: [{ id: uid(), text: 'Destape de cañería en cocina.', at: 'Ayer' }],
+      fotos: [],
+      cobrado: true,
+      montoCobrado: 95000,
+    },
+    {
+      id: 'j6',
+      cliente: 'Suárez',
+      telefono: '1144556677',
+      direccion: 'Gurruchaga 850, CABA',
+      cuando: 'Hace 2 días',
+      fecha: daysAgoISO(2),
+      esHoy: false,
+      status: 'cobrado',
+      notas: [{ id: uid(), text: 'Cambio de flexibles y canilla de cocina.', at: 'Hace 2 días' }],
+      fotos: [],
+      cobrado: true,
+      montoCobrado: 140000,
+    },
+    {
+      id: 'j7',
+      cliente: 'Ramírez',
+      telefono: '1177889900',
+      direccion: 'Directorio 1500, CABA',
+      cuando: 'Hace 6 días',
+      fecha: daysAgoISO(6),
+      esHoy: false,
+      status: 'cobrado',
+      notas: [{ id: uid(), text: 'Reparación de pérdida en baño.', at: 'Hace 6 días' }],
+      fotos: [],
+      cobrado: true,
+      montoCobrado: 78000,
+    },
+    {
+      id: 'j8',
+      cliente: 'Gómez',
+      telefono: '1122334455',
+      direccion: 'Av. Santa Fe 4100, CABA',
+      cuando: 'Hace 9 días',
+      fecha: daysAgoISO(9),
+      esHoy: false,
+      status: 'cobrado',
+      notas: [{ id: uid(), text: 'Instalación de termotanque nuevo.', at: 'Hace 9 días' }],
+      fotos: [],
+      cobrado: true,
+      montoCobrado: 210000,
+    },
+    {
+      id: 'j9',
+      cliente: 'Díaz',
+      telefono: '1199887766',
+      direccion: 'Malabia 2300, CABA',
+      cuando: 'Hace 11 días',
+      fecha: daysAgoISO(11),
+      esHoy: false,
+      status: 'cobrado',
+      notas: [{ id: uid(), text: 'Cambio de rejilla y sifón.', at: 'Hace 11 días' }],
+      fotos: [],
+      cobrado: true,
+      montoCobrado: 55000,
+    },
+  ]
+}
 
 function shortZone(direccion?: string): string | undefined {
   if (!direccion) return undefined
@@ -206,7 +295,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     matricula: 'Mat. 4821',
     horaDigest: '08:00',
   })
-  const [jobs, setJobs] = useState<Job[]>(seedJobs)
+  const [jobs, setJobs] = useState<Job[]>(makeSeedJobs)
   const [priceList, setPriceList] = useState<PriceSuggestion[]>([
     { descripcion: 'Mano de obra instalación', precio: 120000 },
     { descripcion: 'Destape de cañería', precio: 45000 },
@@ -240,6 +329,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       telefono: data.telefono || undefined,
       direccion: data.direccion || undefined,
       cuando: data.cuando,
+      fecha: data.esHoy ? daysAgoISO(0) : daysAgoISO(-1),
       esHoy: data.esHoy,
       status: 'agendado',
       notas: data.nota
