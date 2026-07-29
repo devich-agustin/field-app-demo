@@ -10,7 +10,7 @@ import {
   Send,
   Check,
   CheckCircle2,
-  MoreHorizontal,
+  ChevronDown,
   ChevronRight,
   CalendarDays,
   ArrowRight,
@@ -86,18 +86,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <ScreenHeader
-        right={
-          <button
-            type="button"
-            onClick={() => setStatusOpen(true)}
-            aria-label="Cambiar estado"
-            className="flex size-10 items-center justify-center rounded-full text-muted-foreground transition active:bg-secondary"
-          >
-            <MoreHorizontal className="size-6" />
-          </button>
-        }
-      />
+      <ScreenHeader />
 
       <div className="flex-1 overflow-y-auto pb-6 animate-in fade-in duration-300">
         {/* ── Encabezado: la tarea manda ── */}
@@ -105,9 +94,11 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
           <button
             type="button"
             onClick={() => setStatusOpen(true)}
-            className="transition active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-full bg-card py-1 pl-1 pr-2 ring-1 ring-black/[0.07] transition active:scale-[0.98]"
           >
             <StatusChip status={job.status} size="md" />
+            <span className="text-[12px] font-semibold text-muted-foreground">Cambiar</span>
+            <ChevronDown className="size-3.5 text-muted-foreground" />
           </button>
 
           <h1 className="mt-3 text-[27px] font-extrabold leading-[1.14] tracking-tight text-foreground text-balance">

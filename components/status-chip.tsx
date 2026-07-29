@@ -22,12 +22,13 @@ export function StatusChip({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full font-semibold leading-none tracking-[-0.006em]',
+        'inline-flex items-center gap-1.5 rounded-full font-semibold leading-none tracking-[-0.006em]',
         size === 'sm' ? 'px-2.5 py-[5px] text-[11px]' : 'px-3 py-1.5 text-[13px]',
         styles[status],
         className,
       )}
     >
+      <span className="size-1.5 rounded-full bg-current opacity-60" />
       {STATUS_LABEL[status]}
     </span>
   )

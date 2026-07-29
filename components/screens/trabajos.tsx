@@ -208,10 +208,10 @@ export function TrabajosScreen() {
 
         {/* Lista agrupada por fecha */}
         {groups.length > 0 ? (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-7">
             {groups.map((g) => (
               <section key={g.iso}>
-                <h2 className="mb-2 px-1 text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+                <h2 className="mb-2.5 px-2 text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
                   {g.label}
                 </h2>
                 <div className="card-soft overflow-hidden">
@@ -247,7 +247,7 @@ function HistoryRow({ job, divider }: { job: Job; divider: boolean }) {
       type="button"
       onClick={() => go({ name: 'trabajo', jobId: job.id })}
       className={cn(
-        'flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-black/[0.02]',
+        'flex w-full items-center gap-3.5 px-4 py-4 text-left transition active:bg-black/[0.02]',
         divider && 'border-t border-border/60',
       )}
     >
@@ -297,34 +297,42 @@ function HistoryRow({ job, divider }: { job: Job; divider: boolean }) {
 /* Etiqueta de estado con jerarquía. No usa el StatusChip global para no
    alterar la pantalla Hoy: "cobrado" acá va apagado (menos protagonismo). */
 function StatusTag({ status }: { status: JobStatus }) {
-  const styles: Record<JobStatus, string> = {
-    agendado: 'bg-status-agendado text-status-agendado-foreground',
-    proceso: 'bg-status-proceso text-status-proceso-foreground',
-    esperando: 'bg-status-esperando text-status-esperando-foreground',
-    terminado: 'bg-status-terminado text-status-terminado-foreground',
-    // apagado: gris sutil en vez del verde sólido, para bajar su peso visual
-    cobrado: 'bg-transparent text-muted-foreground',
+  // Cada estado con identidad de color propia (dot + tinte), no una pill gris.
+  const cfg: Record<JobStatus, { pill: string; dot: string; label: string }> = {
+    agendado: { pill: 'bg-primary/[0.08] text-primary', dot: 'bg-primary', label: 'Agendado' },
+    proceso: {
+      pill: 'bg-status-proceso text-status-proceso-foreground',
+      dot: 'bg-status-proceso-foreground',
+      label: 'En proceso',
+    },
+    esperando: {
+      pill: 'bg-status-esperando text-status-esperando-foreground',
+      dot: 'bg-status-esperando-foreground',
+      label: 'Esperando',
+    },
+    terminado: {
+      pill: 'bg-status-terminado text-status-terminado-foreground',
+      dot: 'bg-status-terminado-foreground',
+      label: 'Pendiente de cobro',
+    },
+    // cobrado: apagado (cerrado), pero con dot verde para leerse "cobrado"
+    cobrado: { pill: 'bg-secondary text-muted-foreground', dot: 'bg-status-cobrado', label: 'Cobrado' },
   }
-  const labels: Record<JobStatus, string> = {
-    agendado: 'Agendado',
-    proceso: 'En proceso',
-    esperando: 'Esperando',
-    terminado: 'Pendiente de cobro',
-    cobrado: 'Cobrado',
-  }
+  const c = cfg[status]
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold leading-none',
-        styles[status],
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold leading-none',
+        c.pill,
       )}
     >
-      {labels[status]}
+      <span className={cn('size-1.5 rounded-full', c.dot)} />
+      {c.label}
     </span>
   )
 }
 
-/* ── Resumen mensual (solo texto, sin gráficos) ── */
+/* ── Resumen mensual: el monto es el protagonista; cada indicador con color ── */
 function MonthSummary({
   s,
 }: {
@@ -338,35 +346,51 @@ function MonthSummary({
   }
 }) {
   return (
-    <div className="card-soft mb-5 p-5">
+    <div className="card-soft mb-6 p-5">
       <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
         {s.mes}
       </p>
-      <p className="mt-1.5 text-[32px] font-extrabold leading-none tracking-tight text-status-cobrado">
+      <p className="mt-1 text-[36px] font-extrabold leading-none tracking-tight text-foreground">
         {formatMoney(s.cobrado)}
       </p>
-      <p className="mt-2 text-[14px] text-muted-foreground">
-        cobrados · {plural(s.trabajos, 'trabajo', 'trabajos')} este mes
+      <p className="mt-2 text-[13px] font-medium text-muted-foreground">
+        cobrado · {plural(s.trabajos, 'trabajo', 'trabajos')} este mes
       </p>
 
-      <div className="mt-4 grid grid-cols-3 divide-x divide-border/70 border-t border-border/70 pt-4">
-        <Stat value={s.presupuestos} label={'Presupuestos\nenviados'} />
-        <Stat value={s.pendientesCobro} label={'Pendientes\nde cobro'} />
-        <Stat value={s.seguimientos} label={'Seguimientos\npendientes'} />
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <IndChip tone="green" value={s.pendientesCobro} label="Por cobrar" />
+        <IndChip tone="amber" value={s.presupuestos} label="Presupuestos" />
+        <IndChip tone="blue" value={s.seguimientos} label="Seguimientos" />
       </div>
     </div>
   )
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
+function IndChip({
+  tone,
+  value,
+  label,
+}: {
+  tone: 'green' | 'amber' | 'blue'
+  value: number
+  label: string
+}) {
+  const tones = {
+    green: { bg: 'bg-status-terminado/50', num: 'text-status-terminado-foreground', dot: 'bg-status-terminado-foreground' },
+    amber: { bg: 'bg-status-esperando/50', num: 'text-status-esperando-foreground', dot: 'bg-status-esperando-foreground' },
+    blue: { bg: 'bg-accent', num: 'text-accent-foreground', dot: 'bg-accent-foreground' },
+  }[tone]
   return (
-    <div className="flex flex-col items-center px-1 text-center">
-      <span className="text-[22px] font-extrabold tabular-nums leading-none text-foreground">
-        {value}
-      </span>
-      <span className="mt-1.5 whitespace-pre-line text-[11px] font-medium leading-tight text-muted-foreground">
+    <div className={cn('rounded-2xl px-3 py-2.5', tones.bg)}>
+      <div className="flex items-center gap-1.5">
+        <span className={cn('size-1.5 rounded-full', tones.dot)} />
+        <span className={cn('text-[19px] font-extrabold leading-none tabular-nums', tones.num)}>
+          {value}
+        </span>
+      </div>
+      <p className="mt-1.5 text-[11px] font-medium leading-tight text-muted-foreground">
         {label}
-      </span>
+      </p>
     </div>
   )
 }
