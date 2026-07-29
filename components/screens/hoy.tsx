@@ -44,30 +44,28 @@ export function HoyScreen() {
   const hiddenCount = reminders.length - visibleReminders.length
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      {/* Header — solo la fecha ancla el día. Sin saludo: gana aire para que
-          los trabajos de hoy entren en la primera pantalla. */}
-      <header className="flex items-end justify-between px-5 pb-1 pt-6">
-        <h1 className="text-[32px] font-bold leading-tight tracking-tight text-foreground">
+    <div className="flex-1 overflow-y-auto animate-in fade-in duration-300">
+      <header className="flex items-center justify-between px-5 pb-1 pt-7">
+        <h1 className="text-[32px] font-extrabold leading-tight tracking-tight text-foreground">
           {todayLabel()}
         </h1>
-        <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-secondary text-base font-bold text-secondary-foreground">
+        <div className="flex size-10 items-center justify-center rounded-full bg-card text-[15px] font-bold text-foreground shadow-[var(--shadow-soft)] ring-1 ring-black/[0.05]">
           {profile.nombre.slice(0, 1)}
         </div>
       </header>
 
       {/* No te olvides — el corazón de la app */}
       {reminders.length > 0 && (
-        <section className="mt-4 px-5">
-          <div className="mb-2.5 flex items-baseline justify-between px-0.5">
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
+        <section className="mt-6 px-5">
+          <div className="mb-3 flex items-center gap-2 px-0.5">
+            <h2 className="text-[19px] font-bold tracking-tight text-foreground">
               No te olvides
             </h2>
-            <span className="text-[13px] font-medium text-muted-foreground">
-              {reminders.length} {reminders.length === 1 ? 'cosa' : 'cosas'}
+            <span className="flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-secondary px-1.5 text-[12px] font-bold text-muted-foreground">
+              {reminders.length}
             </span>
           </div>
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3">
             {visibleReminders.map((r) => (
               <ReminderCard key={r.id} reminder={r} />
             ))}
@@ -77,7 +75,7 @@ export function HoyScreen() {
             <button
               type="button"
               onClick={() => setShowAllReminders((v) => !v)}
-              className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-card py-2.5 text-[14px] font-semibold text-muted-foreground active:bg-muted"
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 text-[14px] font-semibold text-muted-foreground transition active:bg-secondary"
             >
               {showAllReminders ? (
                 <>
@@ -95,18 +93,18 @@ export function HoyScreen() {
       )}
 
       {/* Trabajos de hoy */}
-      <section className="mt-5 px-5 pb-10">
-        <h2 className="mb-2 px-1 text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <section className="mt-7 px-5 pb-10">
+        <h2 className="mb-2.5 px-1 text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
           Trabajos de hoy
         </h2>
         {hoy.length > 0 ? (
-          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="card-soft overflow-hidden">
             {hoy.map((j, i) => (
               <JobRow key={j.id} job={j} divider={i > 0} />
             ))}
           </div>
         ) : (
-          <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-10 text-center">
+          <div className="card-soft flex flex-col items-center gap-3 px-6 py-11 text-center">
             <p className="text-[17px] font-semibold text-foreground text-balance">
               Hoy no tenés trabajos.
             </p>
@@ -116,7 +114,7 @@ export function HoyScreen() {
             <button
               type="button"
               onClick={() => go({ name: 'crear' })}
-              className="mt-1 flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-semibold text-primary-foreground active:scale-95"
+              className="mt-1 flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[15px] font-semibold text-primary-foreground shadow-[var(--shadow-soft)] transition active:scale-95"
             >
               <Plus className="size-5" /> Nuevo trabajo
             </button>
@@ -171,26 +169,24 @@ function ReminderCard({ reminder }: { reminder: Reminder }) {
   return (
     <div
       className={cn(
-        'rounded-2xl border bg-card p-3.5 shadow-sm',
-        reminder.priority
-          ? 'border-status-terminado-foreground/25 ring-1 ring-status-terminado-foreground/15'
-          : 'border-border',
+        'card-soft p-4',
+        reminder.priority && 'ring-1 ring-status-terminado-foreground/12',
       )}
     >
       <div className="flex items-start gap-3">
         <div
           className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-full',
+            'flex size-10 shrink-0 items-center justify-center rounded-full',
             meta.badge,
           )}
         >
-          <Icon className="size-[18px]" strokeWidth={2.4} />
+          <Icon className="size-[19px]" strokeWidth={2.3} />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pt-0.5">
           <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             {meta.eyebrow}
           </p>
-          <p className="mt-0.5 text-[15px] font-semibold leading-snug text-foreground text-pretty">
+          <p className="mt-1 text-[15px] font-semibold leading-snug text-foreground text-pretty">
             {reminder.text}
           </p>
           {reminder.subtitle && (
@@ -204,8 +200,8 @@ function ReminderCard({ reminder }: { reminder: Reminder }) {
       {/* COBRO — sin "Listo": la única salida es registrar el cobro */}
       {reminder.action === 'cobrar' &&
         (confirmingCobro ? (
-          <div className="mt-3 flex items-center gap-2">
-            <div className="flex flex-1 items-center gap-1.5 rounded-xl border border-input bg-background px-3 py-2">
+          <div className="mt-3.5 flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="input-soft flex flex-1 items-center gap-1.5 px-3 py-2.5">
               <span className="text-[15px] font-semibold text-muted-foreground">$</span>
               <input
                 autoFocus
@@ -220,7 +216,7 @@ function ReminderCard({ reminder }: { reminder: Reminder }) {
               type="button"
               onClick={registrarCobro}
               disabled={montoNum <= 0}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-status-cobrado px-4 py-2.5 text-[14px] font-semibold text-status-cobrado-foreground active:scale-[0.98] disabled:opacity-40"
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-status-cobrado px-4 py-2.5 text-[14px] font-semibold text-status-cobrado-foreground shadow-[var(--shadow-soft)] transition active:scale-[0.97] disabled:opacity-40 disabled:shadow-none"
             >
               <Check className="size-4" strokeWidth={2.5} /> Confirmar
             </button>
@@ -228,17 +224,17 @@ function ReminderCard({ reminder }: { reminder: Reminder }) {
               type="button"
               onClick={() => setConfirmingCobro(false)}
               aria-label="Cancelar"
-              className="flex size-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground active:scale-[0.98]"
+              className="flex size-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground transition active:scale-[0.97]"
             >
               <X className="size-4" strokeWidth={2.5} />
             </button>
           </div>
         ) : (
-          <div className="mt-3">
+          <div className="mt-3.5">
             <button
               type="button"
               onClick={() => setConfirmingCobro(true)}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-status-cobrado px-4 py-2.5 text-[14px] font-semibold text-status-cobrado-foreground active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-status-cobrado/12 px-4 py-2.5 text-[14px] font-semibold text-status-cobrado transition active:scale-[0.98]"
             >
               <Wallet className="size-4" strokeWidth={2.5} /> Registrar cobro
             </button>
@@ -247,18 +243,18 @@ function ReminderCard({ reminder }: { reminder: Reminder }) {
 
       {/* VOLVER */}
       {reminder.action === 'volver' && (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3.5 flex items-center gap-2">
           <button
             type="button"
             onClick={() => go({ name: 'trabajo', jobId: reminder.jobId })}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-[14px] font-semibold text-primary-foreground active:scale-[0.98]"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary/10 px-4 py-2.5 text-[14px] font-semibold text-primary transition active:scale-[0.98]"
           >
             Abrir trabajo <ArrowUpRight className="size-4" strokeWidth={2.5} />
           </button>
           <button
             type="button"
             onClick={() => dismissReminder(reminder.id)}
-            className="flex items-center gap-1.5 rounded-xl bg-secondary px-4 py-2 text-[14px] font-semibold text-secondary-foreground active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-xl bg-secondary px-4 py-2.5 text-[14px] font-semibold text-secondary-foreground transition active:scale-[0.98]"
           >
             <Check className="size-4" strokeWidth={2.5} /> Listo
           </button>
@@ -267,18 +263,18 @@ function ReminderCard({ reminder }: { reminder: Reminder }) {
 
       {/* SEGUIR PRESUPUESTO */}
       {reminder.action === 'seguir-presupuesto' && (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3.5 flex items-center gap-2">
           <button
             type="button"
             onClick={() => callPhone(job?.telefono)}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-[14px] font-semibold text-primary-foreground active:scale-[0.98]"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary/10 px-4 py-2.5 text-[14px] font-semibold text-primary transition active:scale-[0.98]"
           >
             <Phone className="size-4" strokeWidth={2.5} /> Llamar a {job?.cliente}
           </button>
           <button
             type="button"
             onClick={() => dismissReminder(reminder.id)}
-            className="flex items-center gap-1.5 rounded-xl bg-secondary px-4 py-2 text-[14px] font-semibold text-secondary-foreground active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-xl bg-secondary px-4 py-2.5 text-[14px] font-semibold text-secondary-foreground transition active:scale-[0.98]"
           >
             <Check className="size-4" strokeWidth={2.5} /> Listo
           </button>

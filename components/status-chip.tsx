@@ -22,8 +22,8 @@ export function StatusChip({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full font-semibold leading-none',
-        size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-sm',
+        'inline-flex items-center rounded-full font-semibold leading-none tracking-[-0.006em]',
+        size === 'sm' ? 'px-2.5 py-[5px] text-[11px]' : 'px-3 py-1.5 text-[13px]',
         styles[status],
         className,
       )}

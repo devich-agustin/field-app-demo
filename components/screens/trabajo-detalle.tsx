@@ -2,18 +2,17 @@
 
 import { useState } from 'react'
 import {
-  MessageCircle,
   Phone,
   MapPin,
   Camera,
   FileText,
-  Wallet,
   Bell,
-  History,
   Send,
   Check,
   CheckCircle2,
-  User,
+  MoreHorizontal,
+  ChevronRight,
+  CalendarDays,
   ArrowRight,
 } from 'lucide-react'
 import Image from 'next/image'
@@ -27,6 +26,15 @@ import { BottomSheet } from '../bottom-sheet'
 
 const SAMPLE_PHOTOS = ['/photos/trabajo-1.png', '/photos/trabajo-2.png']
 
+// WhatsApp brand mark (para que el ícono se sienta de la familia)
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm5.8 14.13c-.24.68-1.42 1.32-1.96 1.36-.5.04-.99.22-3.35-.7-2.83-1.11-4.62-4-4.76-4.19-.14-.19-1.14-1.51-1.14-2.88s.72-2.05 .98-2.33c.24-.26.53-.33.7-.33.18 0 .35 0 .5.01.16.01.38-.06.59.45.24.58.8 2 .87 2.14.07.14.12.31.02.5-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.72 1.18 1.55 1.91 1.06.95 1.96 1.24 2.24 1.38.28.14.44.12.6-.07.17-.19.7-.81.88-1.09.18-.28.36-.23.61-.14.24.09 1.55.73 1.82.86.27.14.44.21.51.33.07.12.07.69-.17 1.36Z" />
+    </svg>
+  )
+}
+
 export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
   const store = useStore()
   const job = store.getJob(jobId)
@@ -38,7 +46,6 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
 
   if (!job) return null
 
-  // El título (la tarea) es el protagonista; el cliente pasa a segundo plano.
   const titulo = job.titulo || job.cliente
   const tieneTitulo = Boolean(job.titulo) && job.titulo !== job.cliente
   const waMsg = `Hola ${job.cliente}, te escribo por el trabajo${
@@ -85,60 +92,82 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
             type="button"
             onClick={() => setStatusOpen(true)}
             aria-label="Cambiar estado"
+            className="flex size-10 items-center justify-center rounded-full text-muted-foreground transition active:bg-secondary"
           >
-            <StatusChip status={job.status} />
+            <MoreHorizontal className="size-6" />
           </button>
         }
       />
 
       <div className="flex-1 overflow-y-auto pb-6 animate-in fade-in duration-300">
-        {/* ── Encabezado: la tarea manda, el cliente acompaña ── */}
-        <div className="px-5 pt-2">
-          <h1 className="text-[27px] font-extrabold leading-[1.15] tracking-tight text-foreground text-balance">
+        {/* ── Encabezado: la tarea manda ── */}
+        <div className="px-5 pt-1">
+          <button
+            type="button"
+            onClick={() => setStatusOpen(true)}
+            className="transition active:scale-95"
+          >
+            <StatusChip status={job.status} size="md" />
+          </button>
+
+          <h1 className="mt-3 text-[27px] font-extrabold leading-[1.14] tracking-tight text-foreground text-balance">
             {titulo}
           </h1>
 
           {tieneTitulo && (
-            <div className="mt-2 flex items-center gap-1.5 text-[15px] font-semibold text-muted-foreground">
-              <User className="size-4 shrink-0" />
-              {job.cliente}
+            <div className="mt-3 flex items-center gap-2.5">
+              <div className="flex size-9 items-center justify-center rounded-full bg-secondary text-[15px] font-bold text-secondary-foreground">
+                {job.cliente.slice(0, 1).toUpperCase()}
+              </div>
+              <span className="text-[15px] font-semibold text-foreground">
+                {job.cliente}
+              </span>
             </div>
           )}
-
-          <div className="mt-3 flex flex-col gap-1.5">
-            {job.direccion && (
-              <button
-                type="button"
-                onClick={() => openMap(job.direccion)}
-                className="flex items-center gap-2 text-left text-[15px] font-medium text-primary active:opacity-60"
-              >
-                <MapPin className="size-4 shrink-0" /> {job.direccion}
-              </button>
-            )}
-            {job.telefono && (
-              <button
-                type="button"
-                onClick={() => callPhone(job.telefono)}
-                className="flex items-center gap-2 text-left text-[15px] font-medium text-primary active:opacity-60"
-              >
-                <Phone className="size-4 shrink-0" /> {job.telefono}
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* ── Heads-up: cuándo hay que volver (lo más importante si espera) ── */}
+        {/* ── Acciones principales (protagonistas) ── */}
+        <div className="mt-6 flex items-start justify-around px-4">
+          <CircleAction
+            icon={<Phone className="size-[22px]" strokeWidth={2.2} />}
+            label="Llamar"
+            disabled={!job.telefono}
+            onClick={() => callPhone(job.telefono)}
+          />
+          <CircleAction
+            icon={<WhatsAppIcon className="size-[24px]" />}
+            label="WhatsApp"
+            variant="whatsapp"
+            disabled={!job.telefono}
+            onClick={() => openWhatsApp(job.telefono, waMsg)}
+          />
+          <CircleAction
+            icon={<MapPin className="size-[22px]" strokeWidth={2.2} />}
+            label="Ubicación"
+            disabled={!job.direccion}
+            onClick={() => openMap(job.direccion)}
+          />
+          <CircleAction
+            icon={<Camera className="size-[22px]" strokeWidth={2.2} />}
+            label="Foto"
+            onClick={() =>
+              store.addPhoto(jobId, SAMPLE_PHOTOS[job.fotos.length % SAMPLE_PHOTOS.length])
+            }
+          />
+        </div>
+
+        {/* ── Heads-up: cuándo hay que volver ── */}
         {job.status === 'esperando' && job.reminderText && (
-          <div className="mt-5 px-5">
-            <div className="flex items-start gap-3 rounded-2xl border border-status-esperando-foreground/20 bg-status-esperando/50 p-4">
+          <div className="mt-6 px-5">
+            <div className="card-soft flex items-start gap-3 bg-status-esperando/40 p-4 ring-1 ring-status-esperando-foreground/12">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-status-esperando text-status-esperando-foreground">
-                <Bell className="size-[18px]" strokeWidth={2.4} />
+                <Bell className="size-[18px]" strokeWidth={2.3} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-status-esperando-foreground">
                   Te aviso {(job.reminderWhen ?? 'pronto').toLowerCase()}
                 </p>
-                <p className="mt-0.5 text-[15px] font-semibold leading-snug text-foreground text-pretty">
+                <p className="mt-1 text-[15px] font-semibold leading-snug text-foreground text-pretty">
                   {job.reminderText}
                 </p>
                 <button
@@ -153,38 +182,35 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
           </div>
         )}
 
-        {/* ── Acciones rápidas ── */}
-        <div className="mt-5 grid grid-cols-4 gap-2 px-5">
-          <QuickAction
-            icon={<MessageCircle className="size-[22px]" />}
-            label="WhatsApp"
-            highlight
-            disabled={!job.telefono}
-            onClick={() => openWhatsApp(job.telefono, waMsg)}
-          />
-          <QuickAction
-            icon={<Phone className="size-[22px]" />}
-            label="Llamar"
-            disabled={!job.telefono}
-            onClick={() => callPhone(job.telefono)}
-          />
-          <QuickAction
-            icon={<MapPin className="size-[22px]" />}
-            label="Mapa"
-            disabled={!job.direccion}
-            onClick={() => openMap(job.direccion)}
-          />
-          <QuickAction
-            icon={<Camera className="size-[22px]" />}
-            label="Foto"
-            onClick={() =>
-              store.addPhoto(jobId, SAMPLE_PHOTOS[job.fotos.length % SAMPLE_PHOTOS.length])
-            }
-          />
-        </div>
+        {/* ── Detalles ── */}
+        {(job.direccion || job.telefono || job.cuando) && (
+          <Section title="Detalles">
+            <div className="card-soft divide-y divide-border/60">
+              {job.direccion && (
+                <DetailRow
+                  icon={<MapPin className="size-[18px]" strokeWidth={2.1} />}
+                  text={job.direccion}
+                  onClick={() => openMap(job.direccion)}
+                />
+              )}
+              {job.telefono && (
+                <DetailRow
+                  icon={<Phone className="size-[18px]" strokeWidth={2.1} />}
+                  text={job.telefono}
+                  onClick={() => callPhone(job.telefono)}
+                />
+              )}
+              <DetailRow
+                icon={<CalendarDays className="size-[18px]" strokeWidth={2.1} />}
+                text={job.cuando}
+                muted
+              />
+            </div>
+          </Section>
+        )}
 
         {/* ── Nota ── */}
-        <Section icon={<FileText className="size-[18px]" />} title="Nota">
+        <Section title="Nota">
           <div className="flex flex-col gap-2">
             {job.notas.length === 0 && (
               <p className="px-1 text-[14px] leading-relaxed text-muted-foreground text-pretty">
@@ -199,7 +225,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
                 <p className="mt-1 text-xs text-muted-foreground">{n.at}</p>
               </div>
             ))}
-            <div className="flex items-center gap-2 rounded-2xl border border-input bg-card px-3 transition-colors focus-within:border-primary">
+            <div className="input-soft flex items-center gap-2 px-3">
               <input
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
@@ -234,12 +260,12 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
         </Section>
 
         {/* ── Fotos ── */}
-        <Section icon={<Camera className="size-[18px]" />} title="Fotos">
-          <div className="flex flex-wrap gap-2">
+        <Section title="Fotos">
+          <div className="flex flex-wrap gap-2.5">
             {job.fotos.map((src, i) => (
               <div
                 key={i}
-                className="relative size-24 overflow-hidden rounded-2xl border border-border animate-in fade-in zoom-in-95 duration-200"
+                className="relative size-24 overflow-hidden rounded-2xl shadow-[var(--shadow-soft)] ring-1 ring-black/[0.05] animate-in fade-in zoom-in-95 duration-200"
               >
                 <Image
                   src={src || '/placeholder.svg'}
@@ -255,7 +281,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
               onClick={() =>
                 store.addPhoto(jobId, SAMPLE_PHOTOS[job.fotos.length % SAMPLE_PHOTOS.length])
               }
-              className="flex size-24 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground transition active:scale-95 active:bg-muted"
+              className="flex size-24 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground transition active:scale-95 active:bg-secondary"
             >
               <Camera className="size-6" />
               <span className="text-xs font-semibold">Sacar foto</span>
@@ -264,9 +290,9 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
         </Section>
 
         {/* ── Presupuesto ── */}
-        <Section icon={<FileText className="size-[18px]" />} title="Presupuesto">
+        <Section title="Presupuesto">
           {job.quote ? (
-            <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="card-soft p-4">
               <div className="flex items-center justify-between">
                 <span className="text-[26px] font-extrabold tracking-tight text-foreground">
                   {formatMoney(job.quote.total)}
@@ -291,16 +317,16 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
               <button
                 type="button"
                 onClick={() => store.go({ name: 'presupuesto', jobId })}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-secondary py-3 text-sm font-semibold text-secondary-foreground transition active:scale-[0.99]"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary/10 py-3 text-sm font-semibold text-primary transition active:scale-[0.99]"
               >
-                <MessageCircle className="size-4" /> Reenviar por WhatsApp
+                <WhatsAppIcon className="size-4" /> Reenviar por WhatsApp
               </button>
             </div>
           ) : (
             <button
               type="button"
               onClick={() => store.go({ name: 'presupuesto', jobId })}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-4 text-base font-semibold text-primary transition active:scale-[0.99] active:bg-muted"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-4 text-base font-semibold text-primary transition active:scale-[0.99] active:bg-secondary"
             >
               <FileText className="size-5" /> Crear presupuesto
             </button>
@@ -308,9 +334,9 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
         </Section>
 
         {/* ── Cobro ── */}
-        <Section icon={<Wallet className="size-[18px]" />} title="Cobro">
+        <Section title="Cobro">
           {job.cobrado ? (
-            <div className="flex items-center justify-between rounded-2xl border border-status-cobrado/30 bg-status-cobrado/10 px-4 py-4 animate-in fade-in duration-300">
+            <div className="card-soft flex items-center justify-between bg-status-cobrado/[0.08] px-4 py-4 ring-1 ring-status-cobrado/20 animate-in fade-in duration-300">
               <span className="flex items-center gap-2 text-base font-bold text-status-cobrado">
                 <CheckCircle2 className="size-5" /> Cobrado
               </span>
@@ -324,7 +350,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
             <button
               type="button"
               onClick={openCobro}
-              className="flex w-full items-center justify-between rounded-2xl border border-border bg-card px-4 py-4 transition active:scale-[0.99] active:bg-muted"
+              className="card-soft flex w-full items-center justify-between px-4 py-4 transition active:scale-[0.99]"
             >
               <span className="text-base font-bold text-foreground">Pendiente</span>
               <span className="flex items-center gap-1 text-sm font-semibold text-primary">
@@ -336,7 +362,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
 
         {/* ── Historial del cliente ── */}
         {job.historial && (
-          <Section icon={<History className="size-[18px]" />} title="Historial del cliente">
+          <Section title="Historial del cliente">
             <p className="rounded-2xl bg-secondary px-4 py-3 text-[15px] leading-relaxed text-secondary-foreground text-pretty">
               {job.historial}
             </p>
@@ -370,7 +396,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
                   'flex items-center justify-between rounded-2xl border px-4 py-3.5 text-left transition active:scale-[0.99]',
                   job.status === s
                     ? 'border-primary bg-accent'
-                    : 'border-border bg-card',
+                    : 'border-border/70 bg-card',
                 )}
               >
                 <span className="flex items-center gap-3">
@@ -404,7 +430,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
               key={w}
               type="button"
               onClick={() => confirmarEsperando(w)}
-              className="rounded-2xl border border-border bg-card px-4 py-4 text-left text-base font-semibold text-foreground transition active:scale-[0.99] active:bg-muted"
+              className="rounded-2xl border border-border/70 bg-card px-4 py-4 text-left text-base font-semibold text-foreground transition active:scale-[0.99] active:bg-secondary"
             >
               {w}
             </button>
@@ -418,7 +444,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
         onClose={() => setCobroOpen(false)}
         title="Registrar cobro"
       >
-        <div className="flex items-center gap-2 rounded-2xl border border-input bg-card px-4 transition-colors focus-within:border-primary">
+        <div className="input-soft flex items-center gap-2 px-4">
           <span className="text-2xl font-bold text-muted-foreground">$</span>
           <input
             value={monto ? Number(monto.replace(/[^0-9]/g, '')).toLocaleString('es-AR') : ''}
@@ -442,7 +468,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
           type="button"
           onClick={confirmarCobro}
           disabled={montoNum <= 0}
-          className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-status-cobrado text-lg font-bold text-status-cobrado-foreground transition active:scale-[0.99] disabled:opacity-40"
+          className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-status-cobrado text-lg font-bold text-status-cobrado-foreground shadow-[var(--shadow-soft)] transition active:scale-[0.99] disabled:opacity-40 disabled:shadow-none"
         >
           <Check className="size-5" strokeWidth={2.5} /> Cobrado
         </button>
@@ -451,17 +477,17 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
   )
 }
 
-function QuickAction({
+function CircleAction({
   icon,
   label,
   onClick,
-  highlight,
+  variant,
   disabled,
 }: {
   icon: React.ReactNode
   label: string
   onClick: () => void
-  highlight?: boolean
+  variant?: 'whatsapp'
   disabled?: boolean
 }) {
   return (
@@ -469,34 +495,76 @@ function QuickAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={cn(
-        'flex flex-col items-center gap-1.5 rounded-2xl py-3.5 text-xs font-semibold transition active:scale-95 disabled:opacity-35 disabled:active:scale-100',
-        highlight
-          ? 'bg-whatsapp text-whatsapp-foreground'
-          : 'bg-secondary text-secondary-foreground',
-      )}
+      className="flex flex-col items-center gap-2 transition disabled:opacity-35"
     >
-      {icon}
-      {label}
+      <span
+        className={cn(
+          'flex size-14 items-center justify-center rounded-full shadow-[var(--shadow-soft)] transition active:scale-90',
+          variant === 'whatsapp'
+            ? 'bg-whatsapp text-whatsapp-foreground'
+            : 'bg-card text-primary ring-1 ring-black/[0.05]',
+        )}
+      >
+        {icon}
+      </span>
+      <span className="text-[12px] font-semibold text-muted-foreground">{label}</span>
     </button>
   )
 }
 
-function Section({
+function DetailRow({
   icon,
+  text,
+  onClick,
+  muted,
+}: {
+  icon: React.ReactNode
+  text: string
+  onClick?: () => void
+  muted?: boolean
+}) {
+  const content = (
+    <>
+      <span className={cn('shrink-0', muted ? 'text-muted-foreground' : 'text-primary')}>
+        {icon}
+      </span>
+      <span
+        className={cn(
+          'flex-1 truncate text-[15px] font-medium',
+          muted ? 'text-foreground' : 'text-foreground',
+        )}
+      >
+        {text}
+      </span>
+      {onClick && <ChevronRight className="size-4 shrink-0 text-muted-foreground" />}
+    </>
+  )
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-black/[0.02]"
+      >
+        {content}
+      </button>
+    )
+  }
+  return <div className="flex items-center gap-3 px-4 py-3.5">{content}</div>
+}
+
+function Section({
   title,
   children,
 }: {
-  icon: React.ReactNode
   title: string
   children: React.ReactNode
 }) {
   return (
     <section className="mt-6 px-5">
-      <div className="mb-2 flex items-center gap-1.5 px-1 text-muted-foreground">
-        {icon}
-        <h2 className="text-[12px] font-bold uppercase tracking-wider">{title}</h2>
-      </div>
+      <h2 className="mb-2.5 px-1 text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h2>
       {children}
     </section>
   )
@@ -535,11 +603,11 @@ function PrimaryAction({
   if (!label) return null
 
   return (
-    <div className="border-t border-border bg-card px-5 pb-8 pt-4">
+    <div className="border-t border-border/60 bg-card px-5 pb-8 pt-4">
       <button
         type="button"
         onClick={action}
-        className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-lg font-bold text-primary-foreground transition active:scale-[0.99]"
+        className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-[17px] font-bold text-primary-foreground shadow-[var(--shadow-fab)] transition active:scale-[0.98]"
       >
         {label} <ArrowRight className="size-5" />
       </button>

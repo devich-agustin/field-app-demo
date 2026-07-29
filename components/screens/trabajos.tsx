@@ -150,19 +150,19 @@ export function TrabajosScreen() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <header className="flex items-center justify-between px-5 pb-1 pt-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+      <header className="flex items-center justify-between px-5 pb-1 pt-7">
+        <h1 className="text-[32px] font-extrabold tracking-tight text-foreground">
           Trabajos
         </h1>
-        <div className="flex size-11 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+        <div className="flex size-10 items-center justify-center rounded-full bg-card text-[15px] font-bold text-foreground shadow-[var(--shadow-soft)] ring-1 ring-black/[0.05]">
           {profile.nombre.slice(0, 1)}
         </div>
       </header>
 
       {/* Buscador (sticky) */}
-      <div className="sticky top-0 z-10 bg-background/95 px-5 py-3 backdrop-blur">
-        <div className="flex items-center gap-2 rounded-2xl border border-input bg-card px-4">
-          <Search className="size-5 shrink-0 text-muted-foreground" />
+      <div className="sticky top-0 z-10 bg-background/90 px-5 py-3 backdrop-blur">
+        <div className="input-soft flex items-center gap-2.5 px-4">
+          <Search className="size-[18px] shrink-0 text-muted-foreground" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -180,10 +180,10 @@ export function TrabajosScreen() {
                 type="button"
                 onClick={() => setPeriod(p.key)}
                 className={cn(
-                  'flex-1 rounded-full px-2 py-2 text-[13px] font-semibold transition-colors',
+                  'flex-1 rounded-full px-2 py-2 text-[13px] font-semibold transition-all duration-200',
                   period === p.key
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground',
+                    ? 'bg-card text-foreground shadow-[var(--shadow-soft)]'
+                    : 'text-muted-foreground active:text-foreground',
                 )}
               >
                 {p.label}
@@ -214,7 +214,7 @@ export function TrabajosScreen() {
                 <h2 className="mb-2 px-1 text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
                   {g.label}
                 </h2>
-                <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                <div className="card-soft overflow-hidden">
                   {g.jobs.map((j, i) => (
                     <HistoryRow key={j.id} job={j} divider={i > 0} />
                   ))}
@@ -247,8 +247,8 @@ function HistoryRow({ job, divider }: { job: Job; divider: boolean }) {
       type="button"
       onClick={() => go({ name: 'trabajo', jobId: job.id })}
       className={cn(
-        'flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-muted',
-        divider && 'border-t border-border',
+        'flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-black/[0.02]',
+        divider && 'border-t border-border/60',
       )}
     >
       <div
@@ -338,44 +338,35 @@ function MonthSummary({
   }
 }) {
   return (
-    <div className="mb-5 rounded-2xl border border-border bg-card p-5">
+    <div className="card-soft mb-5 p-5">
       <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
         {s.mes}
       </p>
-      <p className="mt-1 text-[28px] font-bold leading-none tracking-tight text-status-cobrado">
+      <p className="mt-1.5 text-[32px] font-extrabold leading-none tracking-tight text-status-cobrado">
         {formatMoney(s.cobrado)}
-        <span className="ml-1.5 text-[14px] font-medium text-muted-foreground">
-          cobrados
-        </span>
       </p>
-      <p className="mt-1.5 text-[14px] text-muted-foreground">
-        {plural(s.trabajos, 'trabajo', 'trabajos')} este mes
+      <p className="mt-2 text-[14px] text-muted-foreground">
+        cobrados · {plural(s.trabajos, 'trabajo', 'trabajos')} este mes
       </p>
 
-      <div className="mt-4 flex flex-col gap-1.5 border-t border-border pt-3.5 text-[14px] text-foreground/90">
-        <SummaryLine value={s.presupuestos} sing="presupuesto enviado" plur="presupuestos enviados" />
-        <SummaryLine value={s.pendientesCobro} sing="pendiente de cobro" plur="pendientes de cobro" />
-        <SummaryLine value={s.seguimientos} sing="seguimiento pendiente" plur="seguimientos pendientes" />
+      <div className="mt-4 grid grid-cols-3 divide-x divide-border/70 border-t border-border/70 pt-4">
+        <Stat value={s.presupuestos} label={'Presupuestos\nenviados'} />
+        <Stat value={s.pendientesCobro} label={'Pendientes\nde cobro'} />
+        <Stat value={s.seguimientos} label={'Seguimientos\npendientes'} />
       </div>
     </div>
   )
 }
 
-function SummaryLine({
-  value,
-  sing,
-  plur,
-}: {
-  value: number
-  sing: string
-  plur: string
-}) {
+function Stat({ value, label }: { value: number; label: string }) {
   return (
-    <div className="flex items-baseline gap-2">
-      <span className="min-w-[1.5rem] text-[15px] font-bold tabular-nums text-foreground">
+    <div className="flex flex-col items-center px-1 text-center">
+      <span className="text-[22px] font-extrabold tabular-nums leading-none text-foreground">
         {value}
       </span>
-      <span className="text-muted-foreground">{value === 1 ? sing : plur}</span>
+      <span className="mt-1.5 whitespace-pre-line text-[11px] font-medium leading-tight text-muted-foreground">
+        {label}
+      </span>
     </div>
   )
 }
