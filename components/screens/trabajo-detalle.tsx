@@ -200,82 +200,108 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
           </Section>
         )}
 
-        {/* ── Nota ── */}
-        <Section title="Nota">
-          <div className="flex flex-col gap-2">
-            {job.notas.length === 0 && (
-              <p className="px-1 text-[14px] leading-relaxed text-muted-foreground text-pretty">
-                Anotá qué hiciste o qué falta. Cuaderno se acuerda por vos.
-              </p>
-            )}
-            {job.notas.map((n) => (
-              <div key={n.id} className="rounded-2xl bg-secondary px-4 py-3">
-                <p className="text-[15px] leading-relaxed text-foreground text-pretty">
-                  {n.text}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{n.at}</p>
-              </div>
-            ))}
-            <div className="input-soft flex items-center gap-2 px-3">
-              <input
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (
-                    e.key === 'Enter' &&
-                    !e.nativeEvent.isComposing &&
-                    e.keyCode !== 229 &&
-                    noteText.trim()
-                  ) {
-                    store.addNote(jobId, noteText.trim())
-                    setNoteText('')
-                  }
-                }}
-                placeholder="Escribir una nota…"
-                className="w-full bg-transparent py-3 text-[15px] outline-none placeholder:text-muted-foreground"
-              />
+        {/* ── Fotos: protagonistas cuando existen ── */}
+        {job.fotos.length > 0 ? (
+          <Section title="Fotos">
+            <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {job.fotos.map((src, i) => (
+                <div
+                  key={i}
+                  className="relative h-44 w-36 shrink-0 overflow-hidden rounded-2xl ring-1 ring-black/[0.05] animate-in fade-in zoom-in-95 duration-200"
+                >
+                  <Image
+                    src={src || '/placeholder.svg'}
+                    alt={`Foto del trabajo ${i + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="144px"
+                  />
+                </div>
+              ))}
               <button
                 type="button"
-                aria-label="Agregar nota"
-                disabled={!noteText.trim()}
-                onClick={() => {
-                  store.addNote(jobId, noteText.trim())
-                  setNoteText('')
-                }}
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition active:scale-90 disabled:opacity-30"
+                onClick={() =>
+                  store.addPhoto(jobId, SAMPLE_PHOTOS[job.fotos.length % SAMPLE_PHOTOS.length])
+                }
+                className="flex h-44 w-24 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl bg-secondary text-muted-foreground transition active:scale-[0.97]"
               >
-                <Send className="size-4" />
+                <Camera className="size-6" />
+                <span className="text-xs font-semibold">Agregar</span>
               </button>
             </div>
-          </div>
-        </Section>
-
-        {/* ── Fotos ── */}
-        <Section title="Fotos">
-          <div className="flex flex-wrap gap-2.5">
-            {job.fotos.map((src, i) => (
-              <div
-                key={i}
-                className="relative size-24 overflow-hidden rounded-2xl shadow-[var(--shadow-soft)] ring-1 ring-black/[0.05] animate-in fade-in zoom-in-95 duration-200"
-              >
-                <Image
-                  src={src || '/placeholder.svg'}
-                  alt={`Foto del trabajo ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
-              </div>
-            ))}
+          </Section>
+        ) : (
+          <Section title="Fotos">
             <button
               type="button"
               onClick={() =>
                 store.addPhoto(jobId, SAMPLE_PHOTOS[job.fotos.length % SAMPLE_PHOTOS.length])
               }
-              className="flex size-24 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground transition active:scale-95 active:bg-secondary"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary/60 py-4 text-[15px] font-semibold text-muted-foreground transition active:scale-[0.99]"
             >
-              <Camera className="size-6" />
-              <span className="text-xs font-semibold">Sacar foto</span>
+              <Camera className="size-5" /> Sacar una foto del trabajo
+            </button>
+          </Section>
+        )}
+
+        {/* ── Notas: como una conversación que evoluciona ── */}
+        <Section title="Notas">
+          {job.notas.length > 0 && (
+            <div className="mb-3 flex flex-col">
+              {job.notas.map((n, i) => (
+                <div key={n.id} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="mt-2.5 size-2 shrink-0 rounded-full bg-primary/40" />
+                    {i < job.notas.length - 1 && (
+                      <div className="w-px flex-1 bg-border" />
+                    )}
+                  </div>
+                  <div className="flex-1 pb-3">
+                    <div className="rounded-2xl rounded-tl-md bg-secondary px-4 py-3">
+                      <p className="text-[15px] leading-relaxed text-foreground text-pretty">
+                        {n.text}
+                      </p>
+                    </div>
+                    <p className="ml-1 mt-1 text-[12px] text-muted-foreground">{n.at}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {job.notas.length === 0 && (
+            <p className="mb-3 px-1 text-[14px] leading-relaxed text-muted-foreground text-pretty">
+              Anotá qué hiciste o qué falta. Cuaderno se acuerda por vos.
+            </p>
+          )}
+          <div className="input-soft flex items-center gap-2 px-3">
+            <input
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === 'Enter' &&
+                  !e.nativeEvent.isComposing &&
+                  e.keyCode !== 229 &&
+                  noteText.trim()
+                ) {
+                  store.addNote(jobId, noteText.trim())
+                  setNoteText('')
+                }
+              }}
+              placeholder="Escribir una nota…"
+              className="w-full bg-transparent py-3 text-[15px] outline-none placeholder:text-muted-foreground"
+            />
+            <button
+              type="button"
+              aria-label="Agregar nota"
+              disabled={!noteText.trim()}
+              onClick={() => {
+                store.addNote(jobId, noteText.trim())
+                setNoteText('')
+              }}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition active:scale-90 disabled:opacity-30"
+            >
+              <Send className="size-4" />
             </button>
           </div>
         </Section>
@@ -317,7 +343,7 @@ export function TrabajoDetalleScreen({ jobId }: { jobId: string }) {
             <button
               type="button"
               onClick={() => store.go({ name: 'presupuesto', jobId })}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-4 text-base font-semibold text-primary transition active:scale-[0.99] active:bg-secondary"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary/60 py-4 text-[15px] font-semibold text-primary transition active:scale-[0.99]"
             >
               <FileText className="size-5" /> Crear presupuesto
             </button>

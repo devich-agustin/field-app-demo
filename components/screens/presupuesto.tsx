@@ -178,7 +178,7 @@ export function PresupuestoScreen({ jobId }: { jobId: string }) {
             <button
               type="button"
               onClick={() => setItems((its) => [...its, { id: uid(), descripcion: '', precio: 0 }])}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-3 text-sm font-semibold text-primary active:bg-muted"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-secondary/60 py-3 text-sm font-semibold text-primary transition active:scale-[0.99]"
             >
               <Plus className="size-4" /> Agregar ítem
             </button>

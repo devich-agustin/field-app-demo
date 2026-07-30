@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Search, ChevronRight } from 'lucide-react'
+import { Search, ChevronRight, Wallet, FileText, Bell } from 'lucide-react'
 import { useStore, formatMoney } from '@/lib/store'
 import type { Job, JobStatus } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -357,40 +357,46 @@ function MonthSummary({
         cobrado · {plural(s.trabajos, 'trabajo', 'trabajos')} este mes
       </p>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <IndChip tone="green" value={s.pendientesCobro} label="Por cobrar" />
-        <IndChip tone="amber" value={s.presupuestos} label="Presupuestos" />
-        <IndChip tone="blue" value={s.seguimientos} label="Seguimientos" />
+      <div className="mt-5 flex items-stretch">
+        <SummaryStat tone="green" icon={Wallet} value={s.pendientesCobro} label="Por cobrar" />
+        <div className="my-1 w-px bg-border/60" />
+        <SummaryStat tone="amber" icon={FileText} value={s.presupuestos} label="Presupuestos" />
+        <div className="my-1 w-px bg-border/60" />
+        <SummaryStat tone="blue" icon={Bell} value={s.seguimientos} label="Seguimientos" />
       </div>
     </div>
   )
 }
 
-function IndChip({
+function SummaryStat({
   tone,
+  icon: Icon,
   value,
   label,
 }: {
   tone: 'green' | 'amber' | 'blue'
+  icon: typeof Wallet
   value: number
   label: string
 }) {
   const tones = {
-    green: { bg: 'bg-status-terminado/50', num: 'text-status-terminado-foreground', dot: 'bg-status-terminado-foreground' },
-    amber: { bg: 'bg-status-esperando/50', num: 'text-status-esperando-foreground', dot: 'bg-status-esperando-foreground' },
-    blue: { bg: 'bg-accent', num: 'text-accent-foreground', dot: 'bg-accent-foreground' },
+    green: 'bg-status-terminado text-status-terminado-foreground',
+    amber: 'bg-status-esperando text-status-esperando-foreground',
+    blue: 'bg-accent text-accent-foreground',
   }[tone]
   return (
-    <div className={cn('rounded-2xl px-3 py-2.5', tones.bg)}>
-      <div className="flex items-center gap-1.5">
-        <span className={cn('size-1.5 rounded-full', tones.dot)} />
-        <span className={cn('text-[19px] font-extrabold leading-none tabular-nums', tones.num)}>
-          {value}
-        </span>
+    <div className="flex flex-1 flex-col items-center gap-2 px-1 text-center">
+      <div className={cn('flex size-9 items-center justify-center rounded-full', tones)}>
+        <Icon className="size-[17px]" strokeWidth={2.3} />
       </div>
-      <p className="mt-1.5 text-[11px] font-medium leading-tight text-muted-foreground">
-        {label}
-      </p>
+      <div>
+        <p className="text-[17px] font-extrabold leading-none tabular-nums text-foreground">
+          {value}
+        </p>
+        <p className="mt-1 text-[11px] font-medium leading-tight text-muted-foreground">
+          {label}
+        </p>
+      </div>
     </div>
   )
 }

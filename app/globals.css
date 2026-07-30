@@ -206,11 +206,11 @@
 }
 
 @layer components {
-  /* Tarjeta premium: plana y limpia — hairline sutil, sombra casi nula */
+  /* Tarjeta: casi sin borde, sombra apenas perceptible — mucho blanco, poco ruido */
   .card-soft {
     background: var(--card);
-    border: 1px solid oklch(0.2 0.02 266 / 0.06);
-    box-shadow: 0 1px 2px oklch(0.2 0.02 266 / 0.03);
+    border: 1px solid oklch(0.2 0.02 266 / 0.035);
+    box-shadow: 0 1px 2px oklch(0.2 0.02 266 / 0.035);
     border-radius: var(--radius-2xl);
   }
   /* Input con feel nativo: sin borde duro, foco elegante */
